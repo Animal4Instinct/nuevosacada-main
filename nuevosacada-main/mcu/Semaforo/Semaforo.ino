@@ -5,6 +5,17 @@
 #include <Adafruit_NeoPixel.h>
 #include <LiquidCrystal_AIP31068_I2C.h>
 
+//**********************************************************************************************
+//ULTIMA ACTIVIDAD MOTOR DC
+//--------------------------------------------------------------------
+// Motor DC - Control directo (solo velocidad, sin puente H)
+// Pin 6 (PWM) → Motor (+), Motor (-) → GND Arduino
+const int PWM_PIN_MOTOR = 6; // Pin PWM para controlar velocidad
+
+bool motorOn = false;
+int motorSpeed = 0; // 0-255
+//**********************************************************************************************
+
 //--------------------------------------------------------------------
 // Pines y objetos globales
 const int ledVerde = 8;
@@ -71,6 +82,30 @@ void setTempColor(uint32_t color) {
   pixelsTemp.show();
   Serial.print("LED Térmico color: "); Serial.println(color, HEX);
 }
+
+
+//**********************************************************************************************
+//ULTIMA ACTIVIDAD MOTOR DC
+//----------------------------------------------------------------
+// Motor - Control directo de velocidad
+//----------------------------------------------------------------
+
+void aplicarMotor() {
+  // Velocidad: si el motor está apagado, fuerza 0
+  int pwm = motorOn ? constrain(motorSpeed, 0, 255) : 0;
+  analogWrite(PWM_PIN_MOTOR, pwm);
+
+  // Debug: muestra valor aplicado
+  Serial.print("Motor aplicado: PWM=");
+  Serial.println(pwm);
+
+  // Reporta estado
+  Serial.print("motor-status:");
+  Serial.print(motorOn ? "on" : "off");
+  Serial.print(",");
+  Serial.println(pwm);
+}
+//**********************************************************************************************
 
 void actualizarLEDTemp(float t1, float t2, float t3) {
   float temps[3] = {t1, t2, t3};
@@ -200,10 +235,39 @@ void manejarComandosSerial() {
       setUmbrales(n, a, r);
     }
   }
+  //**********************************************************************************************
+  //ULTIMA ACTIVIDAD MOTOR DC - Control simplificado (solo velocidad)
+  else if (command.startsWith("motor:")) {
+    // Comandos soportados:
+    //  - motor:on    → Enciende el motor
+    //  - motor:off   → Apaga el motor
+    //  - motor:speed:0-255 → Establece velocidad PWM
+    String rest = command.substring(6);
+    rest.trim();
+    if (rest == "on") { 
+      motorOn = true; 
+      // Si la velocidad es 0, establece valor por defecto
+      if (motorSpeed == 0) motorSpeed = 150;
+      aplicarMotor(); 
+    }
+    else if (rest == "off") { 
+      motorOn = false; 
+      aplicarMotor(); 
+    }
+    else if (rest.startsWith("speed:")) {
+      int s = rest.substring(6).toInt();
+      motorSpeed = constrain(s, 0, 255);
+      aplicarMotor();
+    } 
+    else {
+      Serial.println("motor-cmd-desconocido:" + rest);
+    }
+  }
   else {
     Serial.println("Comando desconocido: " + command);
   }
 }
+  //**********************************************************************************************
 
 // Controla los estados del semáforo
 void manejarSemaforo() {
@@ -260,6 +324,11 @@ void setup() {
   pinMode(ledAmarillo, OUTPUT);
   pinMode(ledRojo, OUTPUT);
   pinMode(pulsador, INPUT_PULLUP);
+
+  //**********************************************************************************************
+  //ULTIMA ACTIVIDAD MOTOR DC
+  pinMode(PWM_PIN_MOTOR, OUTPUT);
+  //**********************************************************************************************
   Serial.begin(9600);
   lcd2.init();
 
@@ -277,8 +346,16 @@ void setup() {
 
   digitalWrite(ledRojo, HIGH);
   Serial.println("Estado E0");
-}
 
+
+  //**********************************************************************************************
+  //ULTIMA ACTIVIDAD MOTOR DC
+  // Estado inicial del motor (apagado)
+  motorOn = false;
+  motorSpeed = 0;
+  aplicarMotor();
+}
+  //**********************************************************************************************
 void loop() {
   manejarBoton();
   manejarComandosSerial();
