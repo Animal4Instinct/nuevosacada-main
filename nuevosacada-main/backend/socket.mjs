@@ -88,13 +88,17 @@ export function registerSocketHandlers(io, mqttClient) {
 
     //**********************************************************************************************
     //ULTIMA ACTIVIDAD MOTOR DC
-    // Motor DC
-    // Publica comandos hacia el MCU mediante el tópico de control general
-    // Espera payloads como: "motor:on", "motor:off", "motor:dir:cw", "motor:speed:120", "motor:set:on,cw,180"
-    socket.on("motor-command", (payload) => {
-      const cmd = typeof payload === 'string' ? payload : String(payload || '');
-      if (!cmd.startsWith('motor:')) return;
-      mqttClient.publish(process.env.MQTT_TOPIC_IN, cmd);
+    // Motor DC - Publicar comandos al tópico específico de motor
+    // Espera payloads como: "on", "off", "speed:120"
+    socket.on("motor-message", (data) => {
+      const { topic, payload } = data;
+      mqttClient.publish(topic, payload, (err) => {
+        if (err) {
+          socket.emit("motor-response", "Error al enviar comando");
+        } else {
+          socket.emit("motor-response", "Comando enviado correctamente");
+        }
+      });
     });
     //******************************************************************************
     

@@ -241,17 +241,32 @@
       wsStatus.textContent = msg;
     });
 
-    // -------------------- Motor DC (Puente H) --------------------
-    motorOnBtn.addEventListener("click", () => socket.emit("motor-command", "motor:on"));
-    motorOffBtn.addEventListener("click", () => socket.emit("motor-command", "motor:off"));
-    motorCWBtn.addEventListener("click", () => socket.emit("motor-command", "motor:cw"));
-    motorCCWBtn.addEventListener("click", () => socket.emit("motor-command", "motor:ccw"));
+    // -------------------- Motor DC (via MQTT Bridge) --------------------
+    motorOnBtn.addEventListener("click", () => {
+      socket.emit("motor-message", { topic: "equipo1/isc2025/semaforo/motor", payload: "on" });
+    });
+    
+    motorOffBtn.addEventListener("click", () => {
+      socket.emit("motor-message", { topic: "equipo1/isc2025/semaforo/motor", payload: "off" });
+    });
+    
+    motorCWBtn.addEventListener("click", () => {
+      socket.emit("motor-message", { topic: "equipo1/isc2025/semaforo/motor", payload: "dir:cw" });
+    });
+    
+    motorCCWBtn.addEventListener("click", () => {
+      socket.emit("motor-message", { topic: "equipo1/isc2025/semaforo/motor", payload: "dir:ccw" });
+    });
 
     motorSpeed.addEventListener("input", () => {
       motorSpeedVal.textContent = motorSpeed.value;
     });
+    
     motorSpeed.addEventListener("change", () => {
-      socket.emit("motor-command", `motor:speed:${motorSpeed.value}`);
+      socket.emit("motor-message", { 
+        topic: "equipo1/isc2025/semaforo/motor", 
+        payload: `speed:${motorSpeed.value}` 
+      });
     });
 
     socket.on("motor-status", (payload) => {
@@ -283,6 +298,10 @@
         motorCCWBtn.classList.remove('btn-secondary');
         motorCCWBtn.classList.add('btn-outline-secondary');
       }
+    });
+
+    socket.on("motor-response", (msg) => {
+      console.log("Respuesta motor:", msg);
     });
 
     // -------------------- Log desde MCU --------------------
