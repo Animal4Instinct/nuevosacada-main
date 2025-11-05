@@ -251,11 +251,11 @@
     });
     
     motorCWBtn.addEventListener("click", () => {
-      socket.emit("motor-message", { topic: "equipo1/isc2025/semaforo/motor", payload: "dir:cw" });
+      socket.emit("motor-message", { topic: "equipo1/isc2025/semaforo/motor", payload: "cw" });
     });
     
     motorCCWBtn.addEventListener("click", () => {
-      socket.emit("motor-message", { topic: "equipo1/isc2025/semaforo/motor", payload: "dir:ccw" });
+      socket.emit("motor-message", { topic: "equipo1/isc2025/semaforo/motor", payload: "ccw" });
     });
 
     motorSpeed.addEventListener("input", () => {
